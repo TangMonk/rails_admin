@@ -327,9 +327,15 @@ module RailsAdmin
 
       def visible_models_with_bindings(bindings)
         models.collect { |m| m.with(bindings) }.select do |m|
-          m.visible? &&
-            RailsAdmin::Config::Actions.find(:index, bindings.merge(abstract_model: m.abstract_model)).try(:authorized?) &&
-            (!m.abstract_model.embedded? || m.abstract_model.cyclic?)
+          ret = false
+          RailsAdmin::Config::Actions.all.map(&:custom_key).select { |x| !!(x.to_s =~ /^index(.+)?/) }.each do |key|
+            if m.visible? &&
+              RailsAdmin::Config::Actions.find(key, bindings.merge(abstract_model: m.abstract_model)).try(:authorized?) &&
+              (!m.abstract_model.embedded? || m.abstract_model.cyclic?)
+              ret = true
+            end
+          end
+          ret
         end
       end
     end
